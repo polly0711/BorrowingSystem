@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org/">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>借書系統</title>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+    .disabled {
+        pointer-events: none;  /* 禁止點擊 */
+        color: #666666;  /* 字體顏色變淡 */
+        cursor: not-allowed;  /* 顯示禁用鼠標樣式 */
+    }
+    .borBtn, .bookName{
+    	text-decoration: none;
+    }
+</style>
+
+</head>
+<body>
+	<div th:replace="~{navbar}"></div>
+	<div class="content-wrapper">
+	
+		<main  class="container-xxl flex-grow-1 container-p-y">
+			<div align="center" class="p-5">
+				<h2>館藏查詢</h2>
+				
+				<table id="bookTable" class="display">
+					<thead>
+						<tr>
+						<th>國際標準書號<th>書名<th>作者<th>書籍內容簡介<th>書籍狀態
+						<th th:unless="${session.user == null}">借書
+						</th>
+						</tr>
+					</thead>
+					<tbody>
+						<th:block th:each=" book : ${books}">
+							<tr><td th:text="${book.isbn}"></td>
+							<td><a class="bookName" th:href="@{/getonebook.controller(isbn=${book.isbn})}" th:text="${book.name}" ></a>	
+							<td th:text="${book.author}"></td>
+							<td th:text="${book.introduction}"></td>
+							<td th:text="${book.inventory.status}"></td>
+							<td th:unless="${session.user == null}">
+								<a class="borBtn"  th:classappend="${book.inventory.status == '已借閱'} ? ' disabled' : ''"
+								 th:onclick="'showAlert(' + ${book.inventory.inventoryId} + ')'" href="javascript:void(0);" >我要借書</a>
+							</td>
+							
+						</th:block>
+					</tbody>
+				</table>
+				<p class="empty"></p>
+				<h3>共<span th:text="${books.size()}"></span>筆</h3>
+			</div>
+		</main>
+	</div>
+	
+	<script th:src="@{/js/jquery-3.7.1.js}"></script>
+	<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+	<script>
+		const showAlert = (inventoryId) => {
+            Swal.fire({
+			    icon: 'question',
+			    title: '確定借書？',
+			    showCancelButton: true,
+			}).then((result) => {
+			    console.log(result)
+			    if(result.isConfirmed){
+			        Swal.fire({
+			            icon: 'success',
+			            title: '已加入書房',
+			        }).then(() => {
+	                    window.location.href = `/borrow.controller?inventoryId=${inventoryId}`;
+	                })
+			    }
+			})
+        }
+        
+		$(document).ready(function() {
+            $('#bookTable').DataTable();
+        });
+	</script>
+
+</body>
+</html>

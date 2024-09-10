@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org/">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login/Register</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.min.css" rel="stylesheet">
+<link th:href="@{/css/login_style.css}" rel="stylesheet" />
+</head>
+<body>
+	<div th:replace="~{navbar}"></div>
+	<div class="login-container">
+        <div class="form-container">
+            <div class="form-toggle">
+                <button id="loginBtn" class="active" onclick="showLogin()">Login</button>
+                <button id="registerBtn" onclick="showRegister()">Register</button>
+            </div>
+            
+            <form id="loginForm" class="form active" th:action="@{/loginPost.controller}" method="post">
+                <h2>Login</h2>
+                <div class="form-group">
+                    <label for="loginPhone">Phone Number</label>
+                    <input type="text" id="loginPhone" placeholder="Enter Phone Number" name="phoneNumber">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Password" name="password">
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            
+            <form id="registerForm" class="form" th:action="@{/registerPost.controller}" method="post">
+                <h2>Register</h2>
+                
+                <div class="form-group">
+                    <label for="registerPhone">Phone Number</label>
+                    <input type="text" id="registerPhone" placeholder="Enter phone" name="phoneNumber" required>
+                    <span id="emailError" class="text-danger" style="color:red; font-size:0.8rem;"></span>
+                    <input type="hidden" id="emailRegValid" value="true">
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="Password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerName">姓名</label>
+                    <input type="text" id="registerName" placeholder="Enter name" name="userName" required>
+                </div>
+                
+                <button type="submit" class="btn" >Register</button>
+            </form>
+
+        </div>
+    </div>
+	
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.3/dist/sweetalert2.all.min.js"></script>
+    <script th:src="@{/js/jquery-3.7.1.js}"></script>
+    
+	<script>
+        function showLogin() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+            
+            document.getElementById('loginBtn').classList.add('active');
+            document.getElementById('registerBtn').classList.remove('active');
+        }
+
+        function showRegister() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+            
+            document.getElementById('loginBtn').classList.remove('active');
+            document.getElementById('registerBtn').classList.add('active');
+        }
+
+        // 帳號或密碼錯誤
+        document.addEventListener('DOMContentLoaded', () => {
+            // 檢查 URL 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('error')) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '帳號或密碼錯誤！',
+                    text: '請重新登入',
+                    showConfirmButton: true,
+                    confirmButtonText: "確定",
+                }).then(() => {
+                    // 移除 URL 參數
+                    history.replaceState(null, '', window.location.pathname);
+                });
+            }
+        });
+        
+        // 註冊成功alert
+        document.addEventListener('DOMContentLoaded', () => {
+            // 檢查 URL 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('success')) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '註冊成功！！',
+                    showConfirmButton: true,
+                    confirmButtonText: "確定",
+                }).then(() => {
+	                // 移除 URL 參數
+	                history.replaceState(null, '', window.location.pathname);
+		        });
+            }
+        });
+        
+        // 帳號已被註冊
+        document.getElementById('registerPhone').addEventListener('blur', function() {
+	        var phoneNumber = this.value;
+	        var emailError = document.getElementById('emailError');
+	        var emailValid = document.getElementById('emailRegValid');
+	        
+	        emailError.textContent = ''; // 清除之前的錯誤訊息
+	
+	        // 發送 AJAX 請求檢查 email 是否已註冊
+	        fetch('/checkPhone', {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json'
+	            },
+	            body: JSON.stringify({ phoneNumber: phoneNumber })
+	        })
+	        .then(response => response.json())
+	        .then(data => {
+	            if (data.exists) {
+	                // 如果 phone 已註冊，顯示錯誤訊息
+	                emailError.textContent = '此帳號已被註冊';
+	                emailValid.value = 'false';
+	            } else {
+	            	emailValid.value = 'true';
+	            }
+	        })
+	        .catch(error => {
+	            console.error('Error:', error);
+	        });
+	    });
+	    // 若phone已被註冊禁止提交表單
+	    document.getElementById('registerForm').addEventListener('submit', function(event) {
+	        var emailValid = document.getElementById('emailRegValid').value;
+	        if (emailValid === 'false') {
+	            event.preventDefault();
+	            alert('Please use a different phone number.');
+	        }
+	    });
+	    
+	    
+	    
+        
+    </script>
+	
+</body>
+</html>
